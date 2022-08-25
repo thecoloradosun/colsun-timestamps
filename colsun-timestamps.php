@@ -9,55 +9,47 @@
  * @package     colsun-timestamps
  */
 
+
 /**
- * Only affect whatever is at /.
+ * Modify the result of get_the_date().
  *
- * We would use is_front_page(), but it's not available early enough for us to
- * still replace the `newspack_posted_on` function defined by the Newspack
- * theme.
+ * @param string|int $the_date Formatted date string or Unix timestamp if
+ *                             $format is 'U' or 'G'.
+ * @param string $format       PHP date format.
+ * @param WP_Post $post        The post object.
+ *
+ * @return string New format.
  */
-if ( '/' !== sanitize_text_field( $_SERVER['REQUEST_URI'] ) ) {
-    return;
+function modify_date( $the_date, $format, $post ) {
+
+	// Only apply these changes to the homepage.
+	if ( ! is_front_page() ) {
+		return $the_date;
+	}
+
+	// Get publish date as unix timestamp.
+	$published_timestamp = get_post_time( 'U', true, $post );
+
+	// Amount of seconds that have passed since the post was published.
+	$elapsed_time_in_seconds = time() - $published_timestamp; // Seconds since the post was published.
+
+	// Within 1 hour.
+	if ( $elapsed_time_in_seconds <= HOUR_IN_SECONDS ) {
+		return sprintf(
+			esc_html__( '%1$s minutes ago', 'colsun-timestamps' ),
+			absint( ceil( $elapsed_time_in_seconds / 60 ) )
+		);
+	}
+
+	// Within 24 hours.
+	if ( $elapsed_time_in_seconds <= 24 * HOUR_IN_SECONDS ) {
+
+		// Same day.
+		if ( get_the_time( 'Y-m-d', $post ) === date( 'Y-m-d', time() ) ) {
+			return gmdate( 'g:i A', $published_timestamp );
+		} else {
+			return gmdate( 'g:i A D j, Y', $published_timestamp );
+		}
+	}
 }
-
-if ( ! function_exists( 'newspack_posted_on' ) ) :
-    function newspack_posted_on() {
-
-        if ( true === apply_filters( 'newspack_listings_hide_publish_date', false ) ) {
-            return;
-        }
-
-        // Get publish date as unix timestamp.
-        $published_timestamp = get_the_time( 'U' );
-
-        // Amount of seconds that have passed since the post was published.
-        $elapsed_time_in_seconds = time() - $published_timestamp; // Seconds since the post was published.
-
-        // Default display.
-        $display_date = get_the_date();
-
-        // Within 24 hours.
-        if ( $elapsed_time_in_seconds <= 24 * HOUR_IN_SECONDS ) {
-
-            // Same day.
-            if ( get_the_time( 'Y-m-d' ) === date( 'Y-m-d', time() ) ) {
-                $display_date = gmdate( 'g:i A', $published_timestamp );
-            } else {
-                $display_date = gmdate( 'g:i A D j, Y', $published_timestamp );
-            }
-        }
-
-        // Within 1 hour.
-        if ( $elapsed_time_in_seconds <= HOUR_IN_SECONDS ) {
-            $display_date = ceil( $elapsed_time_in_seconds / 60 ) . ' Minutes ago';
-            $additional_class = 'timestamp-red';
-        }
-
-        printf(
-            '<time class="entry-date published updated %3$s" datetime="%1$s">%2$s</time>',
-            esc_attr( get_the_date( DATE_W3C ) ),
-            esc_html( $display_date ),
-            esc_attr( $additional_class )
-        );
-    }
-endif;
+add_filter( 'get_the_date', __NAMESPACE__ . '\\modify_date', 10, 3 );
