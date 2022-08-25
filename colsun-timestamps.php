@@ -51,5 +51,7 @@ function modify_date( $the_date, $format, $post ) {
 			return gmdate( 'g:i A D j, Y', $published_timestamp );
 		}
 	}
+
+	return $the_date;
 }
 add_filter( 'get_the_date', __NAMESPACE__ . '\\modify_date', 10, 3 );
