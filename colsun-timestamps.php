@@ -52,6 +52,7 @@ function modify_date( $the_date, $format, $post ) {
 		}
 	}
 
-	return $the_date;
+	// Hide the timestamp anything older than 24 hours.
+	return '';
 }
 add_filter( 'get_the_date', __NAMESPACE__ . '\\modify_date', 10, 3 );
