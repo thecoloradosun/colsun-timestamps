@@ -28,7 +28,7 @@ function modify_date( $the_date, $format, $post ) {
 	}
 
 	// Get publish date as unix timestamp.
-	$published_timestamp = get_post_time( 'U', true, $post );
+	$published_timestamp = get_post_time( 'U', false, $post );
 
 	// Amount of seconds that have passed since the post was published.
 	$elapsed_time_in_seconds = time() - $published_timestamp; // Seconds since the post was published.
